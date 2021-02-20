@@ -1,2 +1,4 @@
 Flask
 Click
+flask-sqlalchemy
+psycopg2

@@ -33,6 +33,19 @@ def run():
         p.wait()
 
 
+@cli.command()
+def run_container():
+    set_env_vars()
+    cmdline = ["docker-compose", "up", "-d"]
+
+    try:
+        p = subprocess.Popen(cmdline)
+        p.wait()
+    except KeyboardInterrupt:
+        p.send_signal(signal.SIGINT)
+        p.wait()
+
+
 if __name__ == "__main__":
     set_env_vars()
     cli()
