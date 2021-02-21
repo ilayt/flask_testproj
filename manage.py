@@ -4,6 +4,7 @@ import os
 import json
 import signal
 import subprocess
+import time
 
 import click
 
@@ -24,6 +25,22 @@ def cli():
 @cli.command()
 def run():
     cmdline = ["flask", "run", "--host=0.0.0.0"]
+
+    try:
+        p = subprocess.Popen(cmdline)
+        p.wait()
+    except KeyboardInterrupt:
+        p.send_signal(signal.SIGINT)
+        p.wait()
+
+
+@cli.command()
+@click.option("--testing", default=False)
+def build(testing):
+    set_env_vars('testing.json' if testing else 'development.json')
+
+    files = ["-f", "docker-compose-testing.yaml"] if testing else []
+    cmdline = ["docker-compose"] + files + ["build"]
 
     try:
         p = subprocess.Popen(cmdline)
@@ -73,6 +90,26 @@ def migrate():
     except KeyboardInterrupt:
         p.send_signal(signal.SIGINT)
         p.wait()
+
+
+def dc_test_cmd():
+    return ["docker-compose", "-f", "docker-compose-testing.yaml"]
+
+
+@cli.command()
+def test():
+    set_env_vars("testing.json")
+
+    subprocess.call(dc_test_cmd() + ["up", "-d"])
+
+    logs = subprocess.check_output(dc_test_cmd() + ["logs", "db"])
+    while "ready to accept connections" not in logs.decode("utf-8"):
+        time.sleep(0.1)
+        logs = subprocess.check_output(dc_test_cmd() + ["logs", "db"])
+
+    subprocess.call(["pytest", "-svv", "--cov=application", "--cov-report=term-missing"])
+
+    subprocess.call(dc_test_cmd() + ["up", "-d"])
 
 
 if __name__ == "__main__":
