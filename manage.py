@@ -46,6 +46,35 @@ def run_container():
         p.wait()
 
 
+@cli.command()
+@click.option("-m", "--message", default="")
+def create_migration(message):
+    set_env_vars()
+
+    subcommand = ["-m", message] if message else []
+    cmdline = ["flask", "db", "migrate"] + subcommand
+
+    try:
+        p = subprocess.Popen(cmdline)
+        p.wait()
+    except KeyboardInterrupt:
+        p.send_signal(signal.SIGINT)
+        p.wait()
+
+
+@cli.command()
+def migrate():
+    set_env_vars()
+    cmdline = ["flask", "db", "upgrade"]
+
+    try:
+        p = subprocess.Popen(cmdline)
+        p.wait()
+    except KeyboardInterrupt:
+        p.send_signal(signal.SIGINT)
+        p.wait()
+
+
 if __name__ == "__main__":
     set_env_vars()
     cli()

@@ -1,4 +1,5 @@
-Flask
 Click
+Flask
+flask-migrate
 flask-sqlalchemy
 psycopg2
