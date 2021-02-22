@@ -7,6 +7,9 @@ import subprocess
 import time
 
 import click
+import psycopg2
+from psycopg2 import errors
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 
 def set_env_vars(conf_file='development.json'):
@@ -107,11 +110,41 @@ def test():
         time.sleep(0.1)
         logs = subprocess.check_output(dc_test_cmd() + ["logs", "db"])
 
+    create_db()
     subprocess.call(["pytest", "-svv", "--cov=application", "--cov-report=term-missing"])
 
-    subprocess.call(dc_test_cmd() + ["up", "-d"])
+    subprocess.call(dc_test_cmd() + ["down"])
+
+
+def run_sql(statements):
+    conn = psycopg2.connect(
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_HOSTNAME"),
+        port=os.getenv("POSTGRES_PORT"),
+    )
+
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cursor = conn.cursor()
+    for statement in statements:
+        cursor.execute(statement)
+
+    cursor.close()
+    conn.close()
+
+
+def create_db():
+
+    try:
+        print(f"Try to create Db '{os.getenv('APPLICATION_DB')}'")
+        run_sql([f"CREATE DATABASE {os.getenv('APPLICATION_DB')}"])
+        print(f"Db '{os.getenv('APPLICATION_DB')}' was created successfully")
+    except errors.DuplicateDatabase:
+        print(
+            f"The database {os.getenv('APPLICATION_DB')} already exists and will not be recreated"
+        )
 
 
 if __name__ == "__main__":
-    set_env_vars()
     cli()
