@@ -1,7 +1,9 @@
 from flask import Flask
 
-from application.models import db
 from flask_migrate import Migrate
+
+from application.models import db
+from application.models import User
 
 
 def create_app(config_name):
@@ -19,5 +21,10 @@ def create_app(config_name):
     def hello_world():
         print('request came')
         return "Hello, World!"
+
+    @app.route("/users")
+    def users():
+        num_users = User.query.count()
+        return f"Number of users: {num_users}"
 
     return app

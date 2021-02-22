@@ -27,6 +27,7 @@ def cli():
 
 @cli.command()
 def run():
+    set_env_vars()
     cmdline = ["flask", "run", "--host=0.0.0.0"]
 
     try:
